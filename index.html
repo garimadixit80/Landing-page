@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NeuroQuest — Level Up Your Mind</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy: #050A1A;
+    --navy2: #0D1530;
+    --violet: #7C3AED;
+    --violet-light: #A855F7;
+    --cyan: #00D4FF;
+    --cyan-dim: #00A8CC;
+    --gold: #FFD700;
+    --gold-dim: #D4A800;
+    --white: #F0F4FF;
+    --muted: #8892B0;
+    --card-bg: rgba(13,21,48,0.85);
+    --border: rgba(124,58,237,0.3);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--navy);
+    color: var(--white);
+    font-family: 'Inter', sans-serif;
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* ── CUSTOM CURSOR ── */
+  #cursor {
+    position: fixed;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--cyan);
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%,-50%);
+    transition: transform .1s, width .2s, height .2s, background .2s;
+    mix-blend-mode: screen;
+    box-shadow: 0 0 12px var(--cyan), 0 0 24px var(--cyan);
+  }
+  #cursor-ring {
+    position: fixed;
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(0,212,255,0.5);
+    pointer-events: none;
+    z-index: 9998;
+    transform: translate(-50%,-50%);
+    transition: transform .15s ease, width .3s, height .3s;
+  }
+  body:has(a:hover) #cursor, body:has(button:hover) #cursor { width: 24px; height: 24px; background: var(--violet-light); }
+
+  /* ── XP HUD (fixed top bar) ── */
+  #hud {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 32px;
+    background: rgba(5,10,26,0.85);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+  }
+  .hud-logo {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 1.2rem;
+    letter-spacing: -0.02em;
+    background: linear-gradient(90deg, var(--cyan), var(--violet-light));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .hud-xp {
+    display: flex; align-items: center; gap: 12px;
+    flex: 1; max-width: 360px; margin: 0 auto;
+  }
+  .hud-level {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.75rem; font-weight: 700;
+    color: var(--gold);
+    white-space: nowrap;
+    min-width: 52px;
+  }
+  .xp-bar-wrap {
+    flex: 1; height: 6px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  #xp-bar {
+    height: 100%;
+    width: 0%;
+    border-radius: 99px;
+    background: linear-gradient(90deg, var(--violet), var(--cyan));
+    transition: width .4s cubic-bezier(.22,1,.36,1);
+    box-shadow: 0 0 8px var(--cyan);
+  }
+  .hud-coins {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 0.8rem; font-weight: 600; color: var(--gold);
+  }
+  .coin-icon { font-size: 1rem; }
+  #coin-count { font-family: 'Space Grotesk', sans-serif; }
+  .hud-nav { display: flex; gap: 24px; align-items: center; }
+  .hud-nav a {
+    color: var(--muted); font-size: 0.85rem;
+    text-decoration: none; font-weight: 500;
+    transition: color .2s;
+  }
+  .hud-nav a:hover { color: var(--white); }
+  .nav-cta {
+    padding: 7px 18px;
+    border-radius: 8px;
+    background: var(--violet);
+    color: var(--white) !important;
+    font-size: 0.85rem !important;
+    transition: background .2s, transform .1s !important;
+  }
+  .nav-cta:hover { background: var(--violet-light) !important; transform: translateY(-1px); }
+
+  /* ── TOAST ACHIEVEMENT ── */
+  #achievement-toast {
+    position: fixed;
+    bottom: 32px; right: 32px;
+    z-index: 1100;
+    background: var(--card-bg);
+    border: 1px solid var(--gold);
+    border-radius: 14px;
+    padding: 14px 20px;
+    display: flex; align-items: center; gap: 14px;
+    transform: translateX(140%);
+    transition: transform .4s cubic-bezier(.22,1,.36,1);
+    backdrop-filter: blur(16px);
+    max-width: 300px;
+    box-shadow: 0 4px 32px rgba(255,215,0,0.12);
+  }
+  #achievement-toast.show { transform: translateX(0); }
+  .toast-icon { font-size: 1.8rem; }
+  .toast-title { font-family: 'Space Grotesk', sans-serif; font-size: 0.7rem; font-weight: 700; color: var(--gold); letter-spacing: .08em; text-transform: uppercase; }
+  .toast-msg { font-size: 0.85rem; color: var(--white); font-weight: 500; margin-top: 2px; }
+
+  /* ── CANVAS PARTICLES ── */
+  #particle-canvas {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /* ── HERO ── */
+  #hero {
+    position: relative;
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    text-align: center;
+    padding: 100px 24px 60px;
+    overflow: hidden;
+  }
+  .hero-bg-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    pointer-events: none;
+  }
+  .orb1 { width: 600px; height: 600px; top: -200px; left: -150px; background: rgba(124,58,237,0.25); }
+  .orb2 { width: 400px; height: 400px; bottom: -100px; right: -100px; background: rgba(0,212,255,0.15); }
+
+  .hero-content { position: relative; z-index: 2; max-width: 780px; }
+
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(124,58,237,0.15);
+    border: 1px solid rgba(124,58,237,0.4);
+    border-radius: 99px;
+    padding: 6px 16px;
+    font-size: 0.78rem; font-weight: 600;
+    color: var(--violet-light);
+    margin-bottom: 28px;
+    animation: fadeSlideDown .7s .2s both;
+  }
+  .badge-dot { width: 6px; height: 6px; background: var(--cyan); border-radius: 50%; animation: pulse 2s infinite; }
+
+  .hero-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(2.6rem, 6vw, 5rem);
+    font-weight: 700;
+    line-height: 1.08;
+    letter-spacing: -0.03em;
+    margin-bottom: 24px;
+    animation: fadeSlideDown .7s .35s both;
+  }
+  .hero-title .gradient-text {
+    background: linear-gradient(135deg, var(--cyan) 0%, var(--violet-light) 60%, var(--gold) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero-sub {
+    font-size: clamp(1rem, 2vw, 1.15rem);
+    color: var(--muted);
+    max-width: 520px;
+    margin: 0 auto 40px;
+    line-height: 1.7;
+    animation: fadeSlideDown .7s .5s both;
+  }
+
+  .hero-cta-row {
+    display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;
+    animation: fadeSlideDown .7s .65s both;
+  }
+  .btn-primary {
+    padding: 14px 32px;
+    border-radius: 12px;
+    border: none;
+    background: linear-gradient(135deg, var(--violet), var(--violet-light));
+    color: #fff;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: none;
+    position: relative;
+    overflow: hidden;
+    transition: transform .2s, box-shadow .2s;
+    box-shadow: 0 0 0 rgba(124,58,237,0);
+  }
+  .btn-primary::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
+    opacity: 0;
+    transition: opacity .2s;
+  }
+  .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 8px 32px rgba(124,58,237,0.5); }
+  .btn-primary:hover::before { opacity: 1; }
+  .btn-secondary {
+    padding: 14px 32px;
+    border-radius: 12px;
+    border: 1.5px solid var(--border);
+    background: transparent;
+    color: var(--white);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: none;
+    transition: border-color .2s, background .2s, transform .2s;
+  }
+  .btn-secondary:hover { border-color: var(--cyan); background: rgba(0,212,255,0.06); transform: translateY(-3px); }
+
+  .hero-stats {
+    margin-top: 60px;
+    display: flex; gap: 40px; justify-content: center; flex-wrap: wrap;
+    animation: fadeSlideDown .7s .8s both;
+  }
+  .stat-item { text-align: center; }
+  .stat-num {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 2rem; font-weight: 700;
+    background: linear-gradient(135deg, var(--cyan), var(--violet-light));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .stat-label { font-size: 0.78rem; color: var(--muted); margin-top: 4px; text-transform: uppercase; letter-spacing: .06em; }
+
+  /* ── QUEST CARDS SECTION ── */
+  section { padding: 100px 24px; }
+  .section-inner { max-width: 1100px; margin: 0 auto; }
+  .section-eyebrow {
+    font-size: 0.75rem; font-weight: 700; letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    margin-bottom: 14px;
+  }
+  .section-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(1.8rem, 4vw, 3rem);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    margin-bottom: 16px;
+  }
+  .section-sub { color: var(--muted); max-width: 500px; line-height: 1.7; font-size: 1rem; }
+
+  .quests-header { margin-bottom: 56px; }
+
+  .quest-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+  }
+
+  .quest-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 28px;
+    position: relative;
+    overflow: hidden;
+    cursor: none;
+    transition: transform .3s, border-color .3s, box-shadow .3s;
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  .quest-card.visible { opacity: 1; transform: translateY(0); transition: opacity .6s ease, transform .6s ease, border-color .3s, box-shadow .3s; }
+  .quest-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(124,58,237,0.05), transparent);
+    pointer-events: none;
+  }
+  .quest-card:hover { transform: translateY(-6px); border-color: rgba(124,58,237,0.7); box-shadow: 0 12px 40px rgba(124,58,237,0.15); }
+
+  .quest-icon { font-size: 2rem; margin-bottom: 16px; display: block; }
+  .quest-title { font-family: 'Space Grotesk', sans-serif; font-size: 1.1rem; font-weight: 600; margin-bottom: 10px; }
+  .quest-desc { font-size: 0.88rem; color: var(--muted); line-height: 1.65; margin-bottom: 20px; }
+
+  .quest-progress-label { display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--muted); margin-bottom: 6px; }
+  .quest-bar-wrap { background: rgba(255,255,255,0.07); border-radius: 99px; height: 5px; overflow: hidden; }
+  .quest-bar { height: 100%; border-radius: 99px; transition: width 1.2s cubic-bezier(.22,1,.36,1); }
+
+  .quest-xp {
+    position: absolute; top: 20px; right: 20px;
+    font-size: 0.7rem; font-weight: 700;
+    color: var(--gold); background: rgba(255,215,0,0.1);
+    border: 1px solid rgba(255,215,0,0.25);
+    border-radius: 99px; padding: 3px 10px;
+  }
+
+  /* ── LEADERBOARD / HOW IT WORKS ── */
+  #how { background: linear-gradient(180deg, var(--navy) 0%, var(--navy2) 100%); }
+
+  .steps-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0;
+    margin-top: 56px;
+    position: relative;
+  }
+  .steps-row::before {
+    content: '';
+    position: absolute;
+    top: 40px; left: 10%; right: 10%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--violet), transparent);
+    pointer-events: none;
+  }
+  .step {
+    text-align: center;
+    padding: 0 24px;
+    opacity: 0; transform: translateY(24px);
+  }
+  .step.visible { opacity: 1; transform: translateY(0); transition: opacity .6s ease, transform .6s ease; }
+
+  .step-num {
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    border: 2px solid var(--violet);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 20px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.2rem; font-weight: 700;
+    color: var(--violet-light);
+    background: rgba(124,58,237,0.1);
+    position: relative; z-index: 1;
+  }
+  .step-num::after {
+    content: '';
+    position: absolute; inset: -6px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(124,58,237,0.12), transparent);
+  }
+  .step-label { font-family: 'Space Grotesk', sans-serif; font-size: 1rem; font-weight: 600; margin-bottom: 10px; }
+  .step-desc { font-size: 0.85rem; color: var(--muted); line-height: 1.65; }
+
+  /* ── LEADERBOARD ── */
+  #leaderboard { padding: 100px 24px; }
+  .lb-header { max-width: 1100px; margin: 0 auto 48px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 20px; }
+
+  .lb-table { max-width: 760px; margin: 0 auto; }
+
+  .lb-row {
+    display: flex; align-items: center; gap: 16px;
+    padding: 14px 20px;
+    border-radius: 12px;
+    margin-bottom: 10px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    opacity: 0; transform: translateX(-20px);
+    transition: opacity .5s ease, transform .5s ease, background .2s;
+  }
+  .lb-row.visible { opacity: 1; transform: translateX(0); }
+  .lb-row:hover { background: rgba(124,58,237,0.08); }
+  .lb-row.top1 { border-color: var(--gold); background: rgba(255,215,0,0.05); }
+  .lb-row.top2 { border-color: #C0C0C0; }
+  .lb-row.top3 { border-color: #CD7F32; }
+
+  .lb-rank { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1rem; width: 28px; text-align: center; }
+  .top1 .lb-rank { color: var(--gold); }
+  .top2 .lb-rank { color: #C0C0C0; }
+  .top3 .lb-rank { color: #CD7F32; }
+
+  .lb-avatar {
+    width: 38px; height: 38px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem;
+    background: linear-gradient(135deg, var(--violet), var(--navy2));
+    border: 2px solid var(--border);
+    flex-shrink: 0;
+  }
+  .lb-name { flex: 1; font-weight: 500; font-size: 0.9rem; }
+  .lb-xp { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 0.85rem; color: var(--cyan); }
+  .lb-badge { font-size: 1rem; }
+
+  /* ── INTERACTIVE SPIN WHEEL MINI-GAME ── */
+  #game-section { padding: 100px 24px; background: var(--navy2); }
+  .game-inner { max-width: 900px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
+  @media(max-width: 700px) { .game-inner { grid-template-columns: 1fr; } }
+
+  .wheel-wrap {
+    display: flex; flex-direction: column; align-items: center; gap: 24px;
+  }
+  #spin-wheel {
+    width: 260px; height: 260px;
+    border-radius: 50%;
+    position: relative;
+    cursor: none;
+    transition: none;
+    filter: drop-shadow(0 0 24px rgba(124,58,237,0.4));
+  }
+  .wheel-pointer {
+    position: absolute;
+    top: -16px; left: 50%;
+    transform: translateX(-50%);
+    font-size: 1.6rem; z-index: 2;
+    filter: drop-shadow(0 0 6px var(--gold));
+  }
+  #spin-btn {
+    padding: 12px 28px; border-radius: 10px;
+    border: none; cursor: none;
+    background: linear-gradient(135deg, var(--gold-dim), var(--gold));
+    color: #1a1000;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.95rem; font-weight: 700;
+    transition: transform .2s, opacity .2s;
+  }
+  #spin-btn:hover { transform: scale(1.04); }
+  #spin-btn:disabled { opacity: .5; }
+  #spin-result { font-family: 'Space Grotesk', sans-serif; font-size: 1rem; font-weight: 600; min-height: 28px; text-align: center; color: var(--gold); }
+
+  .game-copy .section-eyebrow { margin-bottom: 14px; }
+
+
+
+  /* ── FOOTER ── */
+  footer {
+    padding: 32px 24px;
+    border-top: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 12px;
+    color: var(--muted); font-size: 0.8rem;
+  }
+  .footer-logo { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1rem;
+    background: linear-gradient(90deg, var(--cyan), var(--violet-light));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+  /* ── FLOATING BADGE ── */
+  .float-badge {
+    position: fixed;
+    left: 32px;
+    z-index: 1100;
+    background: var(--card-bg);
+    border: 1px solid rgba(0,212,255,0.4);
+    border-radius: 12px;
+    padding: 10px 16px;
+    font-size: 0.78rem; font-weight: 600; color: var(--cyan);
+    backdrop-filter: blur(16px);
+    transform: translateX(-180%);
+    transition: transform .4s .1s cubic-bezier(.22,1,.36,1);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .float-badge.show { transform: translateX(0); }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeSlideDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; } 50% { opacity: .3; }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); }
+  }
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  @keyframes shimmer {
+    0% { background-position: -200% center; }
+    100% { background-position: 200% center; }
+  }
+
+  /* ── DIVIDER ── */
+  .divider {
+    width: 100%; max-width: 1100px; margin: 0 auto;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--violet), transparent);
+  }
+
+  /* ── RESPONSIVE ── */
+  @media(max-width: 768px) {
+    #hud { padding: 10px 16px; }
+    .hud-nav { display: none; }
+    .hud-xp { max-width: 180px; }
+    .hero-stats { gap: 28px; }
+    .steps-row::before { display: none; }
+    .input-row { flex-direction: column; }
+    #achievement-toast { right: 16px; bottom: 16px; max-width: 260px; }
+    .float-badge { left: 16px; }
+  }
+  @media(max-width: 480px) {
+    .hero-cta-row { flex-direction: column; align-items: center; }
+    .btn-primary, .btn-secondary { width: 100%; max-width: 280px; text-align: center; }
+  }
+
+  /* ── MISC ── */
+  .shimmer-text {
+    background: linear-gradient(90deg, var(--cyan), var(--violet-light), var(--gold), var(--cyan));
+    background-size: 200% auto;
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    animation: shimmer 3s linear infinite;
+  }
+  .tag {
+    display: inline-block; padding: 3px 10px;
+    border-radius: 6px; font-size: 0.7rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .05em;
+    margin-top: 12px;
+  }
+  .tag-new { background: rgba(0,212,255,0.15); color: var(--cyan); border: 1px solid rgba(0,212,255,0.3); }
+  .tag-hot { background: rgba(255,107,107,0.15); color: #FF6B6B; border: 1px solid rgba(255,107,107,0.3); }
+  .tag-trend { background: rgba(255,215,0,0.12); color: var(--gold); border: 1px solid rgba(255,215,0,0.3); }
+</style>
+</head>
+<body>
+
+<!-- CUSTOM CURSOR -->
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+
+<!-- HUD -->
+<header id="hud">
+  <div class="hud-logo">⚡ NeuroQuest</div>
+  <div class="hud-xp">
+    <span class="hud-level" id="hud-level">LVL 1</span>
+    <div class="xp-bar-wrap"><div id="xp-bar"></div></div>
+    <div class="hud-coins"><span class="coin-icon">🪙</span><span id="coin-count">0</span></div>
+  </div>
+  <nav class="hud-nav">
+    <a href="#quests">Quests</a>
+    <a href="#how">How</a>
+    <a href="#leaderboard">Ranks</a>
+    
+  </nav>
+</header>
+
+<!-- ACHIEVEMENT TOAST -->
+<div id="achievement-toast">
+  <div class="toast-icon" id="toast-icon">🏆</div>
+  <div>
+    <div class="toast-title">Achievement Unlocked!</div>
+    <div class="toast-msg" id="toast-msg">Explorer — First scroll!</div>
+  </div>
+</div>
+
+<!-- FLOATING BADGE -->
+<div class="float-badge" id="float-badge">
+  <span>🔥</span> <span id="float-badge-text">Streak: 1 day</span>
+</div>
+
+<!-- ───────── HERO ───────── -->
+<section id="hero">
+  <canvas id="particle-canvas"></canvas>
+  <div class="hero-bg-orb orb1"></div>
+  <div class="hero-bg-orb orb2"></div>
+
+  <div class="hero-content">
+    <div class="hero-badge">
+      <span class="badge-dot"></span>
+      2026's #1 Gamified Learning Platform
+    </div>
+    <h1 class="hero-title">
+      Turn your brain into<br>
+      <span class="gradient-text">a high-score machine.</span>
+    </h1>
+    <p class="hero-sub">NeuroQuest transforms everyday learning into epic quests, XP streaks, and boss battles. Earn real rewards for growing your mind.</p>
+    <div class="hero-cta-row">
+      <button class="btn-primary" onclick="addXP(50); showAchievement('🚀','Quest Started — +50 XP earned!')">Start Your Quest →</button>
+      <button class="btn-secondary" onclick="scrollToSection('quests')">See Quests ↓</button>
+    </div>
+    <div class="hero-stats">
+      <div class="stat-item">
+        <div class="stat-num" data-target="2.4">0</div>
+        <div class="stat-label">Million Learners</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num" data-target="94">0</div>
+        <div class="stat-label">% Completion Rate</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num" data-target="128">0</div>
+        <div class="stat-label">Quests Available</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num" data-target="4.9">0</div>
+        <div class="stat-label">App Store Rating</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ───────── QUESTS ───────── -->
+<section id="quests">
+  <div class="section-inner">
+    <div class="quests-header">
+      <div class="section-eyebrow">Active Quests</div>
+      <h2 class="section-title">Choose your<br><span class="shimmer-text">adventure</span></h2>
+      <p class="section-sub">Each quest is a real skill. Complete them at your own pace, earn XP, unlock badges, and rise through the ranks.</p>
+    </div>
+    <div class="quest-grid">
+      <!-- Card 1 -->
+      <div class="quest-card" onclick="addXP(30); showAchievement('🧠','Neural Link — Quest accepted +30 XP')">
+        <span class="quest-icon">🧠</span>
+        <div class="quest-xp">+500 XP</div>
+        <div class="quest-title">Neural Networks 101</div>
+        <div class="quest-desc">Dive into the fundamentals of deep learning. Build your first model and defeat the confusion matrix boss.</div>
+        <div class="quest-progress-label"><span>Progress</span><span>67%</span></div>
+        <div class="quest-bar-wrap"><div class="quest-bar" data-width="67" style="width:0%;background:linear-gradient(90deg,var(--violet),var(--cyan))"></div></div>
+        <span class="tag tag-hot">Hot 🔥</span>
+      </div>
+      <!-- Card 2 -->
+      <div class="quest-card" onclick="addXP(20); showAchievement('📊','Data Wrangler — Quest accepted +20 XP')">
+        <span class="quest-icon">📊</span>
+        <div class="quest-xp">+350 XP</div>
+        <div class="quest-title">Data Alchemy</div>
+        <div class="quest-desc">Transform raw data into golden insights. Master pandas, chart spells, and the legendary pivot table artifact.</div>
+        <div class="quest-progress-label"><span>Progress</span><span>42%</span></div>
+        <div class="quest-bar-wrap"><div class="quest-bar" data-width="42" style="width:0%;background:linear-gradient(90deg,#00D4FF,#00FFB3)"></div></div>
+        <span class="tag tag-new">New ✨</span>
+      </div>
+      <!-- Card 3 -->
+      <div class="quest-card" onclick="addXP(25); showAchievement('🎨','Design Wizard — Quest accepted +25 XP')">
+        <span class="quest-icon">🎨</span>
+        <div class="quest-xp">+400 XP</div>
+        <div class="quest-title">Design Arcana</div>
+        <div class="quest-desc">Wield the principles of visual hierarchy, color theory, and typography to craft interfaces that enchant users.</div>
+        <div class="quest-progress-label"><span>Progress</span><span>21%</span></div>
+        <div class="quest-bar-wrap"><div class="quest-bar" data-width="21" style="width:0%;background:linear-gradient(90deg,#FF6B6B,#FFD700)"></div></div>
+        <span class="tag tag-trend">Trending 📈</span>
+      </div>
+      <!-- Card 4 -->
+      <div class="quest-card" onclick="addXP(35); showAchievement('⚙️','Code Smith — Quest accepted +35 XP')">
+        <span class="quest-icon">⚙️</span>
+        <div class="quest-xp">+600 XP</div>
+        <div class="quest-title">System Design Dungeon</div>
+        <div class="quest-desc">Navigate the labyrinth of distributed systems. Slay bottlenecks, tame load balancers, and conquer the database dragon.</div>
+        <div class="quest-progress-label"><span>Progress</span><span>88%</span></div>
+        <div class="quest-bar-wrap"><div class="quest-bar" data-width="88" style="width:0%;background:linear-gradient(90deg,var(--gold-dim),var(--gold))"></div></div>
+        <span class="tag tag-hot">Epic 🐉</span>
+      </div>
+      <!-- Card 5 -->
+      <div class="quest-card" onclick="addXP(15); showAchievement('💬','Communicator — Quest accepted +15 XP')">
+        <span class="quest-icon">💬</span>
+        <div class="quest-xp">+280 XP</div>
+        <div class="quest-title">AI Prompt Mastery</div>
+        <div class="quest-desc">Become a Prompt Sage. Learn to commune with large language models and craft incantations that unlock their true power.</div>
+        <div class="quest-progress-label"><span>Progress</span><span>55%</span></div>
+        <div class="quest-bar-wrap"><div class="quest-bar" data-width="55" style="width:0%;background:linear-gradient(90deg,#A855F7,#EC4899)"></div></div>
+        <span class="tag tag-new">New ✨</span>
+      </div>
+      <!-- Card 6 -->
+      <div class="quest-card" onclick="addXP(40); showAchievement('🔐','Security — Quest accepted +40 XP')">
+        <span class="quest-icon">🔐</span>
+        <div class="quest-xp">+700 XP</div>
+        <div class="quest-title">Cyber Citadel</div>
+        <div class="quest-desc">Defend the realm from hackers. Decrypt the ancient scrolls of cybersecurity and earn the Sentinel badge.</div>
+        <div class="quest-progress-label"><span>Progress</span><span>12%</span></div>
+        <div class="quest-bar-wrap"><div class="quest-bar" data-width="12" style="width:0%;background:linear-gradient(90deg,#06B6D4,#3B82F6)"></div></div>
+        <span class="tag tag-trend">Legendary 👑</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ───────── HOW IT WORKS ───────── -->
+<section id="how">
+  <div class="section-inner">
+    <div class="section-eyebrow">How it works</div>
+    <h2 class="section-title">Your journey<br>in 4 steps</h2>
+    <div class="steps-row">
+      <div class="step">
+        <div class="step-num">01</div>
+        <div class="step-label">Pick Your Quest</div>
+        <div class="step-desc">Browse 128+ skill quests across tech, design, business, and creativity. Each is a real career-relevant skill.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <div class="step-label">Train & Battle</div>
+        <div class="step-desc">Complete micro-challenges, fight boss levels, and earn XP with every session. Learning feels like a game.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <div class="step-label">Earn Rewards</div>
+        <div class="step-desc">Unlock badges, coins, and real-world vouchers. Top performers get featured on the Global Leaderboard.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">04</div>
+        <div class="step-label">Level Up IRL</div>
+        <div class="step-desc">Your NeuroQuest profile is a verified skill portfolio recognized by 300+ hiring companies worldwide.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ───────── MINI GAME: SPIN WHEEL ───────── -->
+<section id="game-section">
+  <div class="game-inner section-inner">
+    <div class="game-copy">
+      <div class="section-eyebrow">Daily Bonus</div>
+      <h2 class="section-title">Spin to win<br><span class="shimmer-text">bonus XP</span></h2>
+      <p class="section-sub" style="margin-bottom:24px">Every day you log in, you get a free spin. Land on multipliers, rare badges, or even legendary loot drops.</p>
+      <p style="color:var(--muted);font-size:.85rem;">🎯 <strong style="color:var(--white)">Pro tip:</strong> Maintaining a 7-day streak doubles your spin rewards and unlocks the Diamond Tier badge.</p>
+    </div>
+    <div class="wheel-wrap">
+      <div style="position:relative;display:inline-block;">
+        <div class="wheel-pointer">▼</div>
+        <canvas id="spin-wheel" width="260" height="260"></canvas>
+      </div>
+      <div id="spin-result">Spin to discover your bonus!</div>
+      <button id="spin-btn" onclick="spinWheel()">🎰 Spin the Wheel!</button>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ───────── LEADERBOARD ───────── -->
+<section id="leaderboard">
+  <div class="section-inner">
+    <div class="lb-header">
+      <div>
+        <div class="section-eyebrow">Global Rankings</div>
+        <h2 class="section-title" style="margin-bottom:0">Leaderboard</h2>
+      </div>
+      <div style="color:var(--muted);font-size:.85rem;">Updated every 24 hours · <span style="color:var(--cyan)">Season 12 Active</span></div>
+    </div>
+    <div class="lb-table">
+      <div class="lb-row top1"><span class="lb-rank">1</span><div class="lb-avatar">🦊</div><div class="lb-name">AstraFox</div><div class="lb-xp">48,200 XP</div><span class="lb-badge">👑</span></div>
+      <div class="lb-row top2"><span class="lb-rank">2</span><div class="lb-avatar">🐉</div><div class="lb-name">NovaDragon</div><div class="lb-xp">41,750 XP</div><span class="lb-badge">🥈</span></div>
+      <div class="lb-row top3"><span class="lb-rank">3</span><div class="lb-avatar">⚡</div><div class="lb-name">ThunderMind</div><div class="lb-xp">39,100 XP</div><span class="lb-badge">🥉</span></div>
+      <div class="lb-row"><span class="lb-rank" style="color:var(--muted)">4</span><div class="lb-avatar">🌙</div><div class="lb-name">LunaCode</div><div class="lb-xp">33,420 XP</div><span class="lb-badge">🔥</span></div>
+      <div class="lb-row"><span class="lb-rank" style="color:var(--muted)">5</span><div class="lb-avatar">🎯</div><div class="lb-name">SynapseX</div><div class="lb-xp">28,880 XP</div><span class="lb-badge">⚔️</span></div>
+      <div class="lb-row"><span class="lb-rank" style="color:var(--muted)">6</span><div class="lb-avatar">🌿</div><div class="lb-name">GreenByte</div><div class="lb-xp">24,500 XP</div><span class="lb-badge">🌿</span></div>
+      <div class="lb-row" id="you-row" style="border-color:var(--violet);background:rgba(124,58,237,0.08)"><span class="lb-rank" style="color:var(--violet-light)">—</span><div class="lb-avatar">😎</div><div class="lb-name">You <span style="font-size:.72rem;color:var(--muted)">(keep scrolling!)</span></div><div class="lb-xp" id="your-xp-display">0 XP</div><span class="lb-badge">🚀</span></div>
+    </div>
+  </div>
+</section>
+
+
+
+<!-- ───────── FOOTER ───────── -->
+<footer>
+  <div class="footer-logo">⚡ NeuroQuest</div>
+  <div>© 2026 NeuroQuest Inc. — All quests reserved.</div>
+  
+</footer>
+
+<script>
+/* ── CURSOR ── */
+const cursor = document.getElementById('cursor');
+const ring = document.getElementById('cursor-ring');
+let mx = 0, my = 0, rx = 0, ry = 0;
+document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; cursor.style.left = mx+'px'; cursor.style.top = my+'px'; });
+(function animRing() {
+  rx += (mx - rx) * 0.12; ry += (my - ry) * 0.12;
+  ring.style.left = rx+'px'; ring.style.top = ry+'px';
+  requestAnimationFrame(animRing);
+})();
+
+/* ── XP SYSTEM ── */
+let totalXP = 0, level = 1, coins = 0;
+const xpPerLevel = 200;
+function addXP(amount) {
+  totalXP += amount;
+  coins += Math.floor(amount / 10);
+  document.getElementById('coin-count').textContent = coins;
+  document.getElementById('your-xp-display').textContent = totalXP + ' XP';
+  const levelBefore = level;
+  level = Math.floor(totalXP / xpPerLevel) + 1;
+  const pct = ((totalXP % xpPerLevel) / xpPerLevel) * 100;
+  document.getElementById('xp-bar').style.width = pct + '%';
+  document.getElementById('hud-level').textContent = 'LVL ' + level;
+  if (level > levelBefore) {
+    showAchievement('⬆️', `Level Up! You're now Level ${level}!`);
+  }
+  // Animate coin number
+  const coinEl = document.getElementById('coin-count');
+  coinEl.style.transform = 'scale(1.4)';
+  setTimeout(() => coinEl.style.transform = 'scale(1)', 200);
+}
+
+/* ── ACHIEVEMENT TOAST ── */
+let toastTimer;
+function showAchievement(icon, msg) {
+  const toast = document.getElementById('achievement-toast');
+  document.getElementById('toast-icon').textContent = icon;
+  document.getElementById('toast-msg').textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 3200);
+}
+
+/* ── SCROLL XP & UNLOCKS ── */
+let scrollMilestones = { 10: false, 30: false, 60: false, 90: false };
+window.addEventListener('scroll', () => {
+  const pct = Math.round((window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100);
+  if (pct >= 10 && !scrollMilestones[10]) { scrollMilestones[10]=true; addXP(20); showAchievement('🧭','Explorer — Scrolled 10% +20 XP'); showFloatBadge('🔥 Streak active!'); }
+  if (pct >= 30 && !scrollMilestones[30]) { scrollMilestones[30]=true; addXP(30); showAchievement('⚔️','Adventurer — Halfway deep +30 XP'); }
+  if (pct >= 60 && !scrollMilestones[60]) { scrollMilestones[60]=true; addXP(50); showAchievement('🌟','Hero — Almost there! +50 XP'); }
+  if (pct >= 90 && !scrollMilestones[90]) { scrollMilestones[90]=true; addXP(100); showAchievement('🏆','Legend — Page Master! +100 XP'); }
+});
+
+/* ── FLOAT BADGE ── */
+function showFloatBadge(text) {
+  const fb = document.getElementById('float-badge');
+  document.getElementById('float-badge-text').textContent = text;
+  fb.classList.add('show');
+  setTimeout(() => fb.classList.remove('show'), 3000);
+}
+
+/* ── SCROLL ANIMATIONS ── */
+const observer = new IntersectionObserver(entries => {
+  entries.forEach((e,i) => {
+    if (e.isIntersecting) {
+      setTimeout(() => e.target.classList.add('visible'), i * 80);
+      // animate quest bars
+      const bar = e.target.querySelector('.quest-bar');
+      if (bar) setTimeout(() => { bar.style.width = bar.dataset.width + '%'; }, 200);
+      observer.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.12 });
+document.querySelectorAll('.quest-card, .step, .lb-row').forEach(el => observer.observe(el));
+
+/* ── COUNTER ANIMATION ── */
+function animateCounter(el, target, decimals=0) {
+  let start = 0, dur = 1800;
+  const step = timestamp => {
+    if (!start) start = timestamp;
+    const progress = Math.min((timestamp - start) / dur, 1);
+    const val = progress * target;
+    el.textContent = decimals ? val.toFixed(1) : Math.floor(val);
+    if (progress < 1) requestAnimationFrame(step);
+    else el.textContent = decimals ? target.toFixed(1) : target;
+  };
+  requestAnimationFrame(step);
+}
+const statObs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      const t = parseFloat(e.target.dataset.target);
+      animateCounter(e.target, t, t % 1 !== 0 ? 1 : 0);
+      statObs.unobserve(e.target);
+    }
+  });
+}, { threshold: .5 });
+document.querySelectorAll('[data-target]').forEach(el => statObs.observe(el));
+
+/* ── PARTICLE CANVAS ── */
+(function initParticles() {
+  const canvas = document.getElementById('particle-canvas');
+  const ctx = canvas.getContext('2d');
+  let W, H, particles = [];
+  function resize() { W = canvas.width = canvas.offsetWidth; H = canvas.height = canvas.offsetHeight; }
+  resize(); window.addEventListener('resize', resize);
+  for (let i = 0; i < 100; i++) particles.push({
+    x: Math.random() * 1920, y: Math.random() * 1080,
+    r: Math.random() * 1.5 + .3,
+    dx: (Math.random() - .5) * .4,
+    dy: (Math.random() - .5) * .4,
+    o: Math.random() * .6 + .1,
+    c: Math.random() > .5 ? '#7C3AED' : '#00D4FF'
+  });
+  function draw() {
+    ctx.clearRect(0,0,W,H);
+    particles.forEach(p => {
+      p.x += p.dx; p.y += p.dy;
+      if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
+      if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+      ctx.fillStyle = p.c;
+      ctx.globalAlpha = p.o;
+      ctx.fill();
+    });
+    // draw connections
+    ctx.globalAlpha = 1;
+    particles.forEach((a, i) => {
+      particles.slice(i+1).forEach(b => {
+        const dist = Math.hypot(a.x-b.x, a.y-b.y);
+        if (dist < 120) {
+          ctx.beginPath();
+          ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+          ctx.strokeStyle = `rgba(124,58,237,${.15 * (1 - dist/120)})`;
+          ctx.lineWidth = .5;
+          ctx.stroke();
+        }
+      });
+    });
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+/* ── SPIN WHEEL ── */
+(function initWheel() {
+  const canvas = document.getElementById('spin-wheel');
+  const ctx = canvas.getContext('2d');
+  const slices = [
+    { label: '+100 XP', color: '#7C3AED', text: '#fff' },
+    { label: '🪙 ×5',   color: '#FFD700', text: '#1a1000' },
+    { label: '+50 XP',  color: '#0D1530', text: '#00D4FF' },
+    { label: '💎 Gem',  color: '#00D4FF', text: '#050A1A' },
+    { label: '+200 XP', color: '#A855F7', text: '#fff' },
+    { label: '🔥 Boost',color: '#FF6B6B', text: '#fff' },
+    { label: '+25 XP',  color: '#1E3A5F', text: '#00D4FF' },
+    { label: '👑 Badge', color: '#D4A800', text: '#1a1000' },
+  ];
+  const n = slices.length;
+  const arc = (2 * Math.PI) / n;
+  let angle = 0;
+
+  function draw(rot) {
+    const cx = 130, cy = 130, r = 120;
+    ctx.clearRect(0,0,260,260);
+    // outer glow ring
+    const grad = ctx.createRadialGradient(cx,cy,r-2,cx,cy,r+6);
+    grad.addColorStop(0,'rgba(124,58,237,0.8)'); grad.addColorStop(1,'transparent');
+    ctx.beginPath(); ctx.arc(cx,cy,r+6,0,Math.PI*2);
+    ctx.fillStyle = grad; ctx.fill();
+
+    slices.forEach((s, i) => {
+      const start = rot + i * arc - Math.PI/2;
+      const end = start + arc;
+      ctx.beginPath();
+      ctx.moveTo(cx,cy);
+      ctx.arc(cx,cy,r,start,end);
+      ctx.closePath();
+      ctx.fillStyle = s.color;
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(5,10,26,0.6)'; ctx.lineWidth = 2; ctx.stroke();
+      // text
+      ctx.save();
+      ctx.translate(cx,cy);
+      ctx.rotate(start + arc/2);
+      ctx.textAlign = 'right';
+      ctx.fillStyle = s.text;
+      ctx.font = 'bold 11px Space Grotesk, sans-serif';
+      ctx.fillText(s.label, r - 10, 4);
+      ctx.restore();
+    });
+    // center cap
+    ctx.beginPath(); ctx.arc(cx,cy,24,0,Math.PI*2);
+    ctx.fillStyle = '#050A1A'; ctx.fill();
+    ctx.strokeStyle = 'rgba(124,58,237,.6)'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 14px Space Grotesk';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('⚡', cx, cy);
+  }
+  draw(angle);
+  window.spinWheel = function() {
+    const btn = document.getElementById('spin-btn');
+    btn.disabled = true;
+    const totalRot = (Math.PI * 2 * (8 + Math.random() * 5));
+    const duration = 3200;
+    const start = performance.now();
+    const startAngle = angle;
+    function anim(now) {
+      const t = Math.min((now - start) / duration, 1);
+      const ease = 1 - Math.pow(1 - t, 4);
+      angle = startAngle + totalRot * ease;
+      draw(angle);
+      if (t < 1) { requestAnimationFrame(anim); }
+      else {
+        const finalAngle = ((angle % (Math.PI*2)) + Math.PI*2) % (Math.PI*2);
+        const idx = Math.floor(n - (finalAngle / (Math.PI*2)) * n) % n;
+        const won = slices[idx];
+        document.getElementById('spin-result').textContent = '🎉 You won: ' + won.label + '!';
+        const xpMatch = won.label.match(/\+(\d+) XP/);
+        if (xpMatch) addXP(parseInt(xpMatch[1]));
+        else addXP(15);
+        showAchievement('🎰', 'Spin Winner — ' + won.label + ' claimed!');
+        setTimeout(() => { btn.disabled = false; }, 2000);
+      }
+    }
+    requestAnimationFrame(anim);
+  };
+  draw(0);
+})();
+
+/* ── SMOOTH SCROLL ── */
+function scrollToSection(id) {
+  document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
+}
+
+/* ── PARALLAX ORBS ── */
+window.addEventListener('scroll', () => {
+  const y = window.scrollY;
+  document.querySelector('.orb1').style.transform = `translateY(${y * 0.15}px)`;
+  document.querySelector('.orb2').style.transform = `translateY(${-y * 0.1}px)`;
+});
+</script>
+</body>
+</html>
