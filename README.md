@@ -2,7 +2,7 @@
 
 NeuroQuest is a futuristic landing page concept for an AI-powered learning and productivity platform. Inspired by modern gaming interfaces, the entire user journey is transformed into an interactive quest where users earn XP, unlock achievements, collect rewards, and progress through levels simply by exploring the page.
 
-🔗 Live Demo: [https://your-live-link.com](https://garimadixit80.github.io/Landing-page/)
+🔗 Live Demo: https://garimadixit80.github.io/Landing-page/
 
 ## ✨ Features
 
