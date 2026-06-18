@@ -63,11 +63,3 @@ This project demonstrates how gamification can be integrated into modern web exp
 * Interactive quest cards reward user actions.
 * Spin-the-Wheel game provides bonus rewards.
 * Leaderboard updates dynamically based on earned XP.
-
-## 🚀 Live Demo
-
-Add your deployment link here.
-
-## 📄 License
-
-This project is open source and available under the MIT License.
